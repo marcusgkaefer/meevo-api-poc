@@ -1,0 +1,19 @@
+{
+  "manifest_version": 3,
+  "name": "Your Extension",
+  "version": "1.0",
+  "permissions": [
+    "webRequest",
+    "webRequestBlocking",
+    "<all_urls>" // Be specific if possible
+  ],
+  "background": {
+    "service_worker": "background.js"
+  },
+  "web_accessible_resources": [
+    {
+      "resources": ["your-resource.js"],
+      "matches": ["<all_urls>"]
+    }
+  ]
+} 

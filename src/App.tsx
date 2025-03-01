@@ -1,4 +1,3 @@
-
 import { Toaster } from "@/components/ui/toaster";
 import { Toaster as Sonner } from "@/components/ui/sonner";
 import { TooltipProvider } from "@/components/ui/tooltip";
@@ -9,7 +8,7 @@ import Index from "./pages/Index";
 import SignIn from "./pages/SignIn";
 import SignUp from "./pages/SignUp";
 import NotFound from "./pages/NotFound";
-import { getToken } from "./utils/apiClient";
+import { getToken, fetchAppointmentCategories } from "./utils/apiClient";
 import { useEffect, useState } from "react";
 
 const queryClient = new QueryClient();
@@ -52,7 +51,6 @@ const App = () => {
   };
 
   useEffect(() => {
-    // Check if token exists in localStorage
     const storedToken = localStorage.getItem("authToken");
     if (storedToken) {
       setToken(storedToken);
@@ -60,6 +58,20 @@ const App = () => {
     } else {
       initApp();
     }
+  }, []);
+
+  useEffect(() => {
+    const getCategories = async () => {
+      try {
+        const categories = await fetchAppointmentCategories();
+        console.log(categories);
+        // Handle categories as needed
+      } catch (error) {
+        console.error("Failed to fetch categories:", error);
+      }
+    };
+
+    getCategories();
   }, []);
 
   return (

@@ -1,7 +1,7 @@
-
 import { useState, useEffect } from "react";
 import { Service } from "@/types";
-import { getServices } from "@/utils/api";
+import { getServices, getProfessionalsByService } from "@/utils/api";
+import { getToken } from "@/utils/apiClient";
 import { cn } from "@/lib/utils";
 import { Clock, Star, Users, Search, Check } from "lucide-react";
 
@@ -18,7 +18,8 @@ const ServiceSelection: React.FC<ServiceSelectionProps> = ({ onSelect }) => {
   useEffect(() => {
     const fetchServices = async () => {
       try {
-        const data = await getServices();
+        const { access_token } = await getToken();
+        const data = await getServices(access_token);
         setServices(data);
       } catch (error) {
         console.error("Failed to fetch services:", error);
@@ -30,15 +31,23 @@ const ServiceSelection: React.FC<ServiceSelectionProps> = ({ onSelect }) => {
     fetchServices();
   }, []);
 
-  const filteredServices = services.filter(service =>
-    service.name.toLowerCase().includes(searchTerm.toLowerCase())
+  const filteredServices = services.filter(
+    (service) =>
+      service?.name &&
+      service?.name?.toLowerCase().includes(searchTerm.toLowerCase())
   );
 
-  const handleServiceClick = (service: Service, index: number) => {
+  const handleServiceClick = async (service: Service, index: number) => {
     setSelectedIndex(index);
     // Add small delay to show the selection animation before proceeding
-    setTimeout(() => {
-      onSelect(service);
+    setTimeout(async () => {
+      try {
+        const specialists = await getProfessionalsByService(service.id);
+        console.log("Specialists for service", service.name, specialists);
+        onSelect(service);
+      } catch (error) {
+        console.error("Failed to fetch specialists:", error);
+      }
     }, 300);
   };
 
@@ -46,7 +55,9 @@ const ServiceSelection: React.FC<ServiceSelectionProps> = ({ onSelect }) => {
     <div className="animate-fade-in">
       <div className="mb-6">
         <h2 className="text-2xl font-semibold mb-1">Select a Service</h2>
-        <p className="text-muted-foreground">Choose the waxing service you need</p>
+        <p className="text-muted-foreground">
+          Choose the waxing service you need
+        </p>
       </div>
 
       <div className="relative mb-6 group">
@@ -66,8 +77,8 @@ const ServiceSelection: React.FC<ServiceSelectionProps> = ({ onSelect }) => {
         {loading ? (
           // Loading skeleton
           Array.from({ length: 5 }).map((_, i) => (
-            <div 
-              key={i} 
+            <div
+              key={i}
               className="rounded-xl border p-4 h-28 shimmer animate-pulse"
               style={{ animationDelay: `${i * 100}ms` }}
             />
@@ -75,7 +86,7 @@ const ServiceSelection: React.FC<ServiceSelectionProps> = ({ onSelect }) => {
         ) : filteredServices.length > 0 ? (
           filteredServices.map((service, index) => {
             const isSelected = selectedIndex === index;
-            
+
             return (
               <div
                 key={service.id}
@@ -83,7 +94,9 @@ const ServiceSelection: React.FC<ServiceSelectionProps> = ({ onSelect }) => {
                   "rounded-xl transition-all duration-300 shadow-sm hover:shadow-md",
                   "transform hover:-translate-y-1 active:translate-y-0 overflow-hidden",
                   "border cursor-pointer relative group",
-                  isSelected ? "ring-2 ring-custom-secondary border-custom-secondary/50" : "hover:border-primary/40"
+                  isSelected
+                    ? "ring-2 ring-custom-secondary border-custom-secondary/50"
+                    : "hover:border-primary/40"
                 )}
                 onClick={() => handleServiceClick(service, index)}
                 style={{ animationDelay: `${index * 50}ms` }}
@@ -96,13 +109,13 @@ const ServiceSelection: React.FC<ServiceSelectionProps> = ({ onSelect }) => {
                     </div>
                   </div>
                 )}
-                
+
                 <div className="flex p-4 items-start space-x-4">
                   {/* Service image */}
                   <div className="relative flex-shrink-0">
                     {service.imageUrl ? (
-                      <img 
-                        src={service.imageUrl} 
+                      <img
+                        src={service.imageUrl}
                         alt={service.name}
                         className="h-16 w-16 object-cover rounded-lg shadow-sm group-hover:shadow transform transition-all duration-300 group-hover:scale-105"
                       />
@@ -114,34 +127,37 @@ const ServiceSelection: React.FC<ServiceSelectionProps> = ({ onSelect }) => {
                       </div>
                     )}
                   </div>
-                  
+
                   {/* Service details */}
                   <div className="flex-1">
                     <h3 className="font-medium text-lg">{service.name}</h3>
                     <p className="text-sm text-muted-foreground line-clamp-2 mb-2">
                       {service.description}
                     </p>
-                    
+
                     {/* Service metadata chips */}
                     <div className="flex flex-wrap gap-2 mt-1">
                       <span className="inline-flex items-center gap-1 px-2 py-1 rounded-full bg-primary/10 text-primary text-xs">
                         <Clock size={12} />
                         <span>{service.duration} min</span>
                       </span>
-                      
+
                       <span className="inline-flex items-center gap-1 px-2 py-1 rounded-full bg-emerald-100 text-emerald-700 text-xs">
                         <Users size={12} />
                         <span>2 specialists</span>
                       </span>
-                      
+
                       {/* Random star rating for demo */}
                       <span className="inline-flex items-center gap-1 px-2 py-1 rounded-full bg-amber-100 text-amber-700 text-xs">
-                        <Star size={12} className="fill-amber-500 text-amber-500" />
+                        <Star
+                          size={12}
+                          className="fill-amber-500 text-amber-500"
+                        />
                         <span>{(4 + Math.random()).toFixed(1)}</span>
                       </span>
                     </div>
                   </div>
-                  
+
                   {/* Price tag - Smoother display */}
                   <div className="flex-shrink-0 self-start">
                     <div className="bg-gradient-to-r from-custom-primary/10 to-custom-secondary/20 text-custom-secondary font-semibold px-4 py-2 rounded-lg shadow-sm transition-all group-hover:shadow group-hover:scale-105">
@@ -154,7 +170,9 @@ const ServiceSelection: React.FC<ServiceSelectionProps> = ({ onSelect }) => {
           })
         ) : (
           <div className="text-center p-8 border border-dashed rounded-xl bg-muted/30">
-            <p className="text-muted-foreground">No services found matching "{searchTerm}"</p>
+            <p className="text-muted-foreground">
+              No services found matching "{searchTerm}"
+            </p>
           </div>
         )}
       </div>

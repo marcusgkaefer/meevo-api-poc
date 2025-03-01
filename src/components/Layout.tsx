@@ -75,7 +75,7 @@ const Layout: React.FC<LayoutProps> = ({ children, className }) => {
         </header>
         <main className={cn("rounded-xl px-2", className)}>{children}</main>
         <footer className="text-center text-xs text-muted-foreground mt-12 pb-6">
-          <p>© 2023 GlowWax. All rights reserved.</p>
+          <p></p>
         </footer>
       </div>
     </div>

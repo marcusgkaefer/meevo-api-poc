@@ -106,7 +106,7 @@ const professionals: Professional[] = [
   },
 ];
 
-const baseUrl = import.meta.env.VITE_API_BASE_URL;
+const baseUrl = "http://localhost:3000"; // Point to your local server
 const tenantId = import.meta.env.VITE_TENANT_ID;
 const locationId = import.meta.env.VITE_LOCATION_ID;
 
@@ -115,20 +115,23 @@ console.log(import.meta.env);
 
 // API functions
 export const getServices = async (token: string): Promise<Service[]> => {
-  const response = await axios.get(`${baseUrl}/v1/book/appointmentCategories`, {
+  const response = await axios.get(`${baseUrl}/api/services`, {
     headers: {
       Authorization: `Bearer ${token}`,
       Accept: "application/json",
     },
-    params: {
-      TenantId: tenantId,
-      LocationId: locationId,
-    },
   });
 
-  return response.data.Data.map((item: any) => ({
-    id: item.AppointmentCategoryId,
-    name: item.DisplayName,
+  const { data } = response?.data || {};
+  console.log(">>>> response", data);
+
+  if (!data?.length) {
+    throw new Error("Failed to fetch services");
+  }
+
+  return data?.map((item: any) => ({
+    id: item.appointmentCategoryId,
+    name: item.displayName,
     description: "",
     price: 0,
     duration: 0,

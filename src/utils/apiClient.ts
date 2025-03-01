@@ -1,23 +1,38 @@
-
 import axios, { AxiosInstance } from "axios";
 
 const apiClient: AxiosInstance = axios.create({
+  baseURL: "http://localhost:3000", // Point to your local server
+  headers: {
+    Accept: "application/json",
+    "Content-Type": "application/json",
+    // Add CORS headers if needed
+    // "Access-Control-Allow-Origin": "*", // This is usually set by the server
+  },
+  // Uncomment if the server requires credentials
+  withCredentials: true,
+});
+
+const authClient: AxiosInstance = axios.create({
   baseURL: import.meta.env.VITE_AUTH_API_BASE_URL,
   headers: {
     Accept: "application/json",
-    "Content-Type": "application/x-www-form-urlencoded",
+    "Content-Type": "application/json",
   },
 });
 
-export const getToken = async (): Promise<any> => {
-  try {
-    const params = new URLSearchParams();
-    params.append("client_id", import.meta.env.VITE_CLIENT_ID);
-    params.append("client_secret", import.meta.env.VITE_CLIENT_SECRET);
-    params.append("grant_type", "client_credentials");
+interface TokenResponse {
+  access_token: string;
+  // Add other properties if the response includes more data
+}
 
-    const response = await apiClient.post("", params);
-    console.log("Token response:", response.data);
+export const getToken = async (): Promise<TokenResponse> => {
+  try {
+    const response = await authClient.post<TokenResponse>("", {
+      client_id: import.meta.env.VITE_CLIENT_ID,
+      client_secret: import.meta.env.VITE_CLIENT_SECRET,
+    });
+
+    localStorage.setItem("authToken", response.data.access_token);
     return response.data;
   } catch (error) {
     console.error("Error fetching token:", error);
@@ -34,4 +49,22 @@ export const createApiClientWithToken = (token: string): AxiosInstance => {
       Authorization: `Bearer ${token}`,
     },
   });
+};
+
+// Define the expected structure of the response
+interface AppointmentCategory {
+  id: number;
+  name: string;
+  // Add other properties as needed
+}
+
+export const fetchAppointmentCategories = async (): Promise<AppointmentCategory[]> => {
+  try {
+    const response = await apiClient.get<AppointmentCategory[]>('/api/appointment-categories');
+    console.log(response.data);
+    return response.data;
+  } catch (error) {
+    console.error("Error fetching appointment categories:", error);
+    throw error;
+  }
 };
